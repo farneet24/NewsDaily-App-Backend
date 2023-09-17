@@ -94,7 +94,7 @@ def logout_view(request):
 
 session_data = {}  # e.g. {'some-session-id': {'articleText': 'some text', 'processed': False}}
 
-@ratelimit(key='ip', rate='50/m')  # Allows 50 requests per minute per IP
+# @ratelimit(key='ip', rate='50/m')  # Allows 50 requests per minute per IP
 @api_view(['POST'])
 def store_text(request):
     if request.method == 'POST':
@@ -150,10 +150,50 @@ def process_request(request, session_id, question_prefix, stream=True):
     
     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
 
-@ratelimit(key='ip', rate='50/m')
+def process_keyword_request(request, session_id, question_prefix, stream=True):
+    was_limited = getattr(request, 'limited', False)
+    if was_limited:
+        return StreamingHttpResponse("Rate limit exceeded", content_type='text/event-stream', status=429)
+    
+    session_info = session_data.get(session_id, {})
+    articleText = session_info.get('articleText', '')
+    
+    if session_info.get('processed', False):
+        return JsonResponse({'error': 'This session ID has already been processed.'})
+    
+    session_data[session_id]['processed'] = True
+    question = f"{question_prefix}: {articleText}"
+    
+    def event_stream():
+        API_KEY = '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'
+        openai.api_key = API_KEY
+        response = openai.ChatCompletion.create(
+            model='gpt-3.5-turbo',
+            messages=[{"role": "user", "content": question}],
+            temperature=0,
+            stream=stream
+        )
+        
+        for chunk in response:
+            chunk_str = json.dumps(chunk)
+            data = json.loads(chunk_str)
+            choices = data.get("choices", [])
+            
+            for choice in choices:
+                if "content" in choice.get("delta", {}):
+                    content = choice["delta"]["content"]
+                    if "\n" in content:
+                        content = content.replace("\n", "/n")
+                    yield f"data: {content}\n\n"
+
+        yield "event: done\ndata: \n\n"
+    
+    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+
+# @ratelimit(key='ip', rate='50/m')
 def Summary(request, session_id):
     return process_request(request, session_id, "Summarize this text")
 
-@ratelimit(key='ip', rate='50/m')
+# @ratelimit(key='ip', rate='50/m')
 def Keywords(request, session_id):
-    return process_request(request, session_id, "Top 5 Proper nouns")
+    return process_keyword_request(request, session_id, "Top 5 Proper nouns")
