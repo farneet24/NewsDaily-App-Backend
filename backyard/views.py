@@ -125,7 +125,7 @@ def process_request(request, session_id, question_prefix, stream=True):
     question = f"{question_prefix}: {articleText}"
     
     def event_stream():
-        API_KEY = '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'
+        API_KEY = os.environ.get('key')
         openai.api_key = API_KEY
         response = openai.ChatCompletion.create(
             model='gpt-3.5-turbo',
@@ -165,7 +165,7 @@ def process_keyword_request(request, session_id, question_prefix, stream=True):
     question = f"{question_prefix}: {articleText}"
     
     def event_stream():
-        API_KEY = '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'
+        API_KEY = os.environ.get('key')
         openai.api_key = API_KEY
         response = openai.ChatCompletion.create(
             model='gpt-3.5-turbo',
