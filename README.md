@@ -26,3 +26,8 @@ To experience NewsDaily's features, visit our live demo [here](https://news-dail
 
 ## Contributors
 For inquiries, suggestions, or contributions, reach out to the project maintainer: [Farneet Singh](mailto:farneetsingh_co21a3_72@dtu.ac.in). You can also checkout the frontend [code](https://github.com/farneet24/NewsDaily-App).
+
+## License
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+The project is licensed under the MIT License.
